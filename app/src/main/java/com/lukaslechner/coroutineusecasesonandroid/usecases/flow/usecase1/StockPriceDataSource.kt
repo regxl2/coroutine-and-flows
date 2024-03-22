@@ -21,4 +21,11 @@ class NetworkStockPriceDataSource(mockApi: FlowMockApi) : StockPriceDataSource {
             delay(5_000)
         }
     }
+
+//    this is similar to room database repository where we use flow
+//    since, we know flow is based on observer pattern and it
+//    emits the value whenever there is change in the database.
+
+//    In this example, we are constantly making the request to the server
+//    and emitting the value after 5000ms
 }

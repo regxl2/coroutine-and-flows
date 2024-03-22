@@ -1,8 +1,13 @@
 package com.lukaslechner.coroutineusecasesonandroid.usecases.flow.usecase2
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.asLiveData
 import com.lukaslechner.coroutineusecasesonandroid.base.BaseViewModel
+import com.lukaslechner.coroutineusecasesonandroid.usecases.flow.mock.Stock
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.*
+import timber.log.Timber
 
 class FlowUseCase2ViewModel(
     stockPriceDataSource: StockPriceDataSource,
@@ -22,6 +27,30 @@ class FlowUseCase2ViewModel(
         8) Perform all flow processing on a background thread
 
      */
-
-    val currentStockPriceAsLiveData: LiveData<UiState> = TODO()
+    val currentStockPriceAsLiveData: LiveData<UiState> = stockPriceDataSource
+        .latestStockList
+        .take(10)
+        .withIndex()
+        .onEach { Timber.tag("Flow").d("Iteration number: ${it.index + 1}") }
+        .map { indexedValue -> indexedValue.value }
+        .filter { list ->
+            val googlePrice = list.find { stock -> stock.name == "Alphabet (Google)" }?.currentPrice
+                ?: return@filter false
+            googlePrice > 2300
+        }
+        .map { list ->
+            var count = 1
+            val newList = mutableListOf<Stock>()
+            for(stock in list){
+                if(stock.country == "United States" && stock.name != "Apple" && stock.name != "Microsoft" && count<=10){
+                    val newStock = stock.copy(rank=count)
+                    newList.add(newStock)
+                    ++count
+                }
+            }
+            newList.toList()
+        }
+        .map { list -> UiState.Success(list) as UiState }
+        .onStart { emit(UiState.Loading) }
+        .asLiveData(defaultDispatcher)
 }
